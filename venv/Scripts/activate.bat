@@ -1,5 +1,5 @@
 @echo off
-set "VIRTUAL_ENV=C:\Users\Naji\AppData\Local\Temp\421deliverable2.sql\venv"
+set "VIRTUAL_ENV=C:\Users\Naji\IdeaProjects\COMP421D2\venv"
 
 if not defined PROMPT (
     set "PROMPT=$P$G"
