@@ -26,7 +26,7 @@ CREATE TABLE Basket (
 CREATE TABLE Product (
                          barcode_no VARCHAR NOT NULL,
                          brand VARCHAR NOT NULL,
-                         color VARCHAR NOT NULL,
+                         color VARCHAR,
                          unit_price FLOAT NOT NULL,
                          order_num INT,
                          PRIMARY KEY (barcode_no),
@@ -107,11 +107,11 @@ The constraints that are not shown are
 - The spinoff Employees =Manager=> Supervision -salesperson- Employees
 - Some participation constraints. In fact, in relationships, it is possible
   to specify if there is a primary key constraint. For example, since the existence of
-  a product isn"t dependent on the existence of an order, we should be able to insert a
+  a product isn't dependent on the existence of an order, we should be able to insert a
   product tuple without necessarily entering a order_id. Therefore, order_id, a foreign key
   to order, should not be specified NOT NULL in Product. If we do, then we should always specify
-  an order id. However, this means that we cannot differentiate between an "exactly one"
-  and "at least one".
+  an order id. However, this means that we cannot differentiate between an 'exactly one'
+  and 'at least one'.
 
   It is possible to add the same phone to two different orders without warning? TEST
 
@@ -142,11 +142,11 @@ when you type the INSERT commands.
 
 INSERT INTO Product (barcode_no, color, unit_price, brand)
 VALUES
-("03243234543", "Gold", 699.99, "Apple"),
-("23456787654", "White", 999.99, "Samsung"),
-("87654567876", "Black", 39.99, "Apple"),
-("54323456722", "Transparent", 15.99, "Samsung"),
-("23456789876", "Pink", 399.99, "Huawei");
+('03243234543', 'Gold', 699.99, 'Apple'),
+('23456787654', 'White', 999.99, 'Samsung'),
+('87654567876', 'Black', 39.99, 'Apple'),
+('54323456722', 'Transparent', 15.99, 'Samsung'),
+('23456789876', 'Pink', 399.99, 'Huawei');
 
 -- Print and turn in the result when you issue a SELECT * FROM relationname command.
 -- SELECT *
@@ -162,51 +162,52 @@ data into DB2 tables is provided on my courses
 
 INSERT INTO Customer(email)
 VALUES
-("alain.daccache@mail.mcgill.ca"),
-("aakarsh.shekhar@mail.mcgill.ca"),
-("ketan.rampurkar@mail.mcgill.ca"),
-("shayan.sheikh@mail.mcgill.ca"),
-("hisham.hawara@mail.mcgill.ca");
+('alain.daccache@mail.mcgill.ca'),
+('aakarsh.shekhar@mail.mcgill.ca'),
+('ketan.rampurkar@mail.mcgill.ca'),
+('shayan.sheikh@mail.mcgill.ca'),
+('hisham.hawara@mail.mcgill.ca');
 
 INSERT INTO Employees(eid, salary, home_address)
 VALUES
-(1, 1000, "425 Backlemore Avenue, Montreal, Canada"),
-(2, 2000, "843 Sherbrooke Street, Montreal, Canada"),
-(3, 3000, "521 Milton Street, Montreal, Canada");
+(1, 1000, '425 Backlemore Avenue, Montreal, Canada'),
+(2, 2000, '843 Sherbrooke Street, Montreal, Canada'),
+(3, 3000, '521 Milton Street, Montreal, Canada');
 
 INSERT INTO Shift(date, start_time, end_time, shift_responsibility, eid)
 VALUES
-("02/22/2020", "2020-02-22 19:00:00-07", "2020-02-22 21:00:00-07", "Cleanup", 1),
-("02/23/2020", "2020-02-22 16:00:00-07", "2020-02-22 19:00:00-07", "On help desk", 2),
-("02/22/2020", "2020-02-22 12:00:00-07", "2020-02-22 14:00:00-07", "On sales", 3);
+('02/22/2020', '2020-02-22 19:00:00-07', '2020-02-22 21:00:00-07', 'Cleanup', 1),
+('02/23/2020', '2020-02-22 16:00:00-07', '2020-02-22 19:00:00-07', 'On help desk', 2),
+('02/22/2020', '2020-02-22 12:00:00-07', '2020-02-22 14:00:00-07', 'On sales', 3);
 
 INSERT INTO Phone (barcode_no, cpu, battery, model, storage, ram)
 VALUES
-("03243234543", "ee", 3240, "0372A", 64, 16),
-("23456787654", "ee", 4120, "23BCA", 32, 8),
-("23456789876", "ee", 2350, "52XBY", 16, 4);
+('03243234543', 'ee', 3240, '0372A', 64, 16),
+('23456787654', 'ee', 4120, '23BCA', 32, 8),
+('23456789876', 'ee', 2350, '52XBY', 16, 4);
 
 INSERT INTO Accessories(barcode_no, type)
 VALUES
-("54323456722", "Samsung Screen Protector"),
-("87654567876", "iPhone Lightning to USB Charging Cable");
+('54323456722', 'Samsung Screen Protector'),
+('87654567876', 'iPhone Lightning to USB Charging Cable');
 
 INSERT INTO Basket (order_num, order_total, email)
 VALUES
-(001, 2, "alain.daccache@mail.mcgill.ca"),
-(002, 1, "ketan.rampurkar@mail.mcgill.ca");
+(001, 2, 'alain.daccache@mail.mcgill.ca'),
+(002, 1, 'ketan.rampurkar@mail.mcgill.ca');
 
 UPDATE Product
 SET order_num = 001
-WHERE barcode_no = "03243234543";
+WHERE barcode_no = '03243234543';
 
 UPDATE Product
 SET order_num = 001
-WHERE barcode_no = "54323456722";
+WHERE barcode_no = '54323456722';
 
 UPDATE Product
 SET order_num = 002
-WHERE barcode_no = "87654567876";
+WHERE barcode_no = '87654567876';
+
 
 -- For each table show the output, truncated to the first 5-10 tuples, that are returned when you
 -- issue a SELECT * FROM relationname command
@@ -260,7 +261,7 @@ SELECT eid
 FROM Employees
 WHERE eid IN (SELECT eid
               FROM Shift
-              WHERE date = "02/22/2020");
+              WHERE date = '02/22/2020');
 
 -- Trivial query
 -- List the phone models that have a RAM over 8 GB
@@ -279,13 +280,13 @@ SQL statements themselves and a script or screenshot that shows your modificatio
 running in a convincing fashion.
 */
 
--- DROP TABLE Stock;
--- DROP table Warehouse;
--- DROP TABLE Shift;
--- DROP TABLE Employees;
--- DROP TABLE PhoneAccessories;
--- DROP TABLE Phone;
--- DROP TABLE Accessories;
--- DROP TABLE Product;
--- DROP table Basket;
--- DROP table Customer;
+DROP TABLE Stock;
+DROP table Warehouse;
+DROP TABLE Shift;
+DROP TABLE Employees;
+DROP TABLE PhoneAccessories;
+DROP TABLE Phone;
+DROP TABLE Accessories;
+DROP TABLE Product;
+DROP table Basket;
+DROP table Customer;
