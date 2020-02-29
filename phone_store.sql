@@ -280,6 +280,28 @@ SQL statements themselves and a script or screenshot that shows your modificatio
 running in a convincing fashion.
 */
 
+/* Part 8
+ Add two CHECK constraints to relations of your database schema.
+Turn in the revised schema, its successful declaration, and the response of database
+ to modifications (insert/update) that violate the constraints.
+--  */
+
+-- Inserting in-correct values
+INSERT INTO Employees(eid, salary, home_address)
+VALUES
+(4, -1500, '320 rue Sherbrooke O., Montreal, Canada ');
+
+INSERT INTO Shift(date, start_time, end_time, shift_responsibility, eid)
+VALUES
+('02/22/2020', '2020-02-22 13:00:00-07', '2020-02-22 10:00:00-07', 'Customer assistance', 4);
+
+-- Revising the schema
+ALTER TABLE employees
+    ADD CONSTRAINT valid_salary_check CHECK (salary >= 0);
+
+ALTER TABLE shift
+    ADD CONSTRAINT valid_time_check CHECK (end_time > start_time);
+
 DROP TABLE Stock;
 DROP table Warehouse;
 DROP TABLE Shift;
