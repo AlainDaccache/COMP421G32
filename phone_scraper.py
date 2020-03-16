@@ -142,14 +142,12 @@ def check_shift_time():
     finally:
         cursor.close()
 
-check_shift_time()
-
 def main():
         # Scrape the web to populate the Phones relation
         # populate_phones()
 
         # Enforce a constraint by searching your database for violations and fixing them in some way.
-        # check_shift_time(connection)
+        # check_shift_time()
 
         while True:
 
@@ -188,7 +186,7 @@ def main():
             elif ans != "":
                 print("\n Not Valid Choice Try again")
 
-# main()
+main()
 
 '''
 Sample Commands:
