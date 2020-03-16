@@ -5,7 +5,7 @@ import random
 import bs4 as bs
 import requests
 import re
-from datetime import timedelta
+from datetime import timedelta, datetime
 from Tools.scripts.treesync import raw_input
 
 # Connect with the database
@@ -123,26 +123,26 @@ def check_shift_time():
         postgreSQL_select_Query = "SELECT eid, start_time, end_time FROM Shift;"
 
         cursor.execute(postgreSQL_select_Query)
-        print("Selecting rows from shifts table using cursor.fetchall")
         shift_records = cursor.fetchall()
 
-        print("Print each row and it's columns values")
-
         for row in shift_records:
-            difference = abs(row[1] - row[2])
-            print(difference)
-            if difference > timedelta(hours = 4):
-                postgreSQL_update_Query = "UPDATE Shift " \
-                                          "SET end_time = (start_time + 4) " \
-                                          "WHERE eid = AND start_time = AND end_time = ;"
-                cursor.execute(postgreSQL_update_Query)
-
+            if abs(row[1] - row[2]) > timedelta(hours = 4) and datetime.now() < row[1]:
+                try:
+                    postgreSQL_update_Query = "UPDATE Shift " \
+                                              "SET end_time = (start_time  + interval '1h' * 4) " \
+                                              "WHERE eid = %s AND start_time = %s AND end_time = %s ;"
+                    cursor.execute(postgreSQL_update_Query, (row[0], row[1], row[2]))
+                    connection.commit()
+                    print("Successfully updated shift time for employee ", row[0])
+                except (Exception, psycopg2.Error) as error:
+                    print("Error while updating data into PostgreSQL")
     except (Exception, psycopg2.Error) as error:
         print("Error while fetching data from PostgreSQL: ", error)
 
     finally:
         cursor.close()
 
+check_shift_time()
 
 def main():
         # Scrape the web to populate the Phones relation
@@ -188,7 +188,7 @@ def main():
             elif ans != "":
                 print("\n Not Valid Choice Try again")
 
-main()
+# main()
 
 '''
 Sample Commands:
