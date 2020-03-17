@@ -1,5 +1,4 @@
-from argparse import ArgumentParser
-
+import numpy as np
 import psycopg2
 import random
 import bs4 as bs
@@ -7,6 +6,7 @@ import requests
 import re
 from datetime import timedelta, datetime
 from Tools.scripts.treesync import raw_input
+import matplotlib.pyplot as plt
 
 # Connect with the database
 try:
@@ -44,9 +44,57 @@ def scrape_phones():
                 battery = row.findAll('td')[11].text.strip().split(' ')[0].split('m')[0]
                 if re.search("[a-zA-Z,:]", battery):
                     continue
-                product_list.append((barcode_no, brand, 0))
+
+                product_list.append((barcode_no, brand, random.randint(500, 1000)))
                 phone_list.append((barcode_no, cpu, battery, model, storage, ram))
     return product_list, phone_list
+
+
+def populate_purchases():
+    try:
+
+        postgres_insert_query_basket = "INSERT INTO Basket(order_num, order_total, email, time)" \
+                                       "VALUES(%s, %s, %s, %s);"
+
+        # Preparing Baskets Entries
+        order_no = [x for x in range(1000, 1050)]
+        random_dates = []
+        start_date = datetime(2019, 1, 1)
+        end_date = datetime(2020, 1, 1)
+        for i in range(50):
+            random_dates.append(start_date + timedelta(
+                # Get a random amount of seconds between `start` and `end`
+                seconds=random.randint(0, int((end_date - start_date).total_seconds())),
+            ))
+
+        baskets = []
+        for i in range(50):
+            baskets.append((order_no[i], 1, "alain.daccache@mail.mcgill.ca",random_dates[i]))
+
+        cursor = connection.cursor()
+        cursor.executemany(postgres_insert_query_basket, baskets)
+        connection.commit()
+        print("50 records inserted into basket table")
+
+        postgres_update_query_product =  """UPDATE Product
+                                            SET order_num = %s
+                                            WHERE barcode_no in (SELECT barcode_no FROM Product LIMIT 50); """
+
+        for i in range(50):
+            cursor.execute(postgres_update_query_product, [order_no[i]])
+            connection.commit()
+
+        print("Updated 50 products purchased")
+
+        # cursor.execute("SELECT barcode_no FROM Product LIMIT 50")
+        # barcodes = cursor.fetchall()
+        # print(barcodes)
+
+    except (Exception, psycopg2.Error) as error:
+        print("Error while fetching Customer records from PostgreSQL: ", error)
+
+    finally:
+        cursor.close()
 
 
 def populate_phones():
@@ -142,16 +190,76 @@ def check_shift_time():
     finally:
         cursor.close()
 
-def main():
-        # Scrape the web to populate the Phones relation
-        # populate_phones()
+'''
+Draw a piechart depicting the percentage of the products owned by each brand
+'''
+def draw_brand_distribution():
+    try:
+        cursor = connection.cursor()
 
-        # Enforce a constraint by searching your database for violations and fixing them in some way.
-        # check_shift_time()
+        # need superuser access
+        postgreSQL_copy_Query = "\copy (SELECT brand, COUNT(*) FROM Product GROUP BY brand) TO 'brand_distribution.csv' WITH CSV;"
+        # cursor.execute(postgreSQL_copy_Query)
 
-        while True:
+        postgreSQL_select_Query = "SELECT brand, COUNT(*) FROM Product GROUP BY brand;"
+        cursor.execute(postgreSQL_select_Query)
 
-            print ("""
+        records = cursor.fetchall()
+
+        brands = [row[0] for row in records]
+        count = [row[1] for row in records]
+
+        # Pie chart, where the slices will be ordered and plotted counter-clockwise:
+        fig1, ax1 = plt.subplots()
+        ax1.pie(count, labels=brands, autopct='%1.1f%%', shadow=True, startangle=90)
+        ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+        plt.show()
+
+    except (Exception, psycopg2.Error) as error:
+            print("Error while fetching data from PostgreSQL: ", error)
+
+    finally:
+        cursor.close()
+
+def draw_overall_sales():
+    try:
+        cursor = connection.cursor()
+
+        # need superuser access
+        postgreSQL_copy_Query = "\copy (SELECT brand, COUNT(*) FROM Product GROUP BY brand) TO 'brand_distribution.csv' WITH CSV;"
+        # cursor.execute(postgreSQL_copy_Query)
+
+        cursor.execute('''  SELECT EXTRACT(month from time) as Month, COALESCE(SUM(unit_price), 0) as Sales
+                            FROM Basket b LEFT OUTER JOIN Product p
+                            ON b.order_num = p.order_num
+                            GROUP BY Month
+                            ORDER BY Month;''')
+
+        records = cursor.fetchall()
+
+        months = [datetime(2020, i+1, 1).strftime('%b') for i in range(12)]
+        sales = [records[i][1] for i in range(12)]
+
+        y_pos = np.arange(len(months))
+
+        plt.bar(y_pos, sales, align='center', alpha=0.5)
+        plt.xticks(y_pos, months)
+        plt.ylabel('Sales (in $)')
+        plt.title('Overall Sales per Month')
+        plt.show()
+
+    except (Exception, psycopg2.Error) as error:
+        print("Error while fetching data from PostgreSQL: ", error)
+
+    finally:
+        cursor.close()
+
+
+def run_app():
+    while True:
+
+        print ("""
                                     Command                                                     Description
             ---------------------------------------------------------------------------------------------------------------
             findInactive t                                                          Look up emails of customers inactive for t months
@@ -162,29 +270,52 @@ def main():
             exit                                                                    Exit program
             """)
 
-            ans = raw_input("What would you like to do? ").split()
+        ans = raw_input("What would you like to do? ").split()
 
-            if ans[0] == "findInactive" and len(ans) == 2:
-                find_inactive(ans[1])
+        if ans[0] == "findInactive" and len(ans) == 2:
+            find_inactive(ans[1])
 
-            elif ans[0] == "addPhone" and len(ans) == 9:
-                add_phone(ans[1], ans[2], ans[3], ans[4], ans[5], ans[6], ans[7], ans[8])
+        elif ans[0] == "addPhone" and len(ans) == 9:
+            add_phone(ans[1], ans[2], ans[3], ans[4], ans[5], ans[6], ans[7], ans[8])
 
-            elif ans[0] == "Ketan":
-                print("Ketan's Part")
+        elif ans[0] == "Ketan":
+            print("Ketan's Part")
 
-            elif ans[0] == "Aakarsh":
-                print("Aakarsh's Part")
+        elif ans[0] == "Aakarsh":
+            print("Aakarsh's Part")
 
-            elif ans[0] == "Shayan":
-                print("Shayan's Part")
+        elif ans[0] == "Shayan":
+            print("Shayan's Part")
 
-            elif ans[0] == "exit":
-                connection.close()
-                exit()
+        elif ans[0] == "exit":
+            connection.close()
+            exit()
 
-            elif ans != "":
-                print("\n Not Valid Choice Try again")
+        elif ans != "":
+            print("\n Not Valid Choice Try again")
+
+def main():
+
+    # Question 1:
+    # Enforce a constraint by searching your database for violations and fixing them in some way.
+    check_shift_time()
+
+    # Question 2:
+    # run_app()
+
+    # Question 4 (a)
+    # Scrape the web to populate the Phones relation
+    populate_phones()
+    # Visualize products by brand in a piechart
+    draw_brand_distribution()
+
+    # Question 4 (b)
+    # Populate purchases to be able to visualize
+    # (will give error if you run again since the records are already stored
+    populate_purchases()
+    # Visualize overall sales per month
+    draw_overall_sales()
+
 
 main()
 
