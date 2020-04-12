@@ -7,6 +7,7 @@ import re
 from datetime import timedelta, datetime
 from Tools.scripts.treesync import raw_input
 import matplotlib.pyplot as plt
+import csv
 
 # Connect with the database
 try:
@@ -21,7 +22,7 @@ except (Exception, psycopg2.Error) as error:
 
 
 def scrape_phones():
-    resp = requests.get('https://en.wikipedia.org/wiki/Comparison_of_smartphones')
+    resp = requests.get('https://en.wikipedia.org/w/index.php?title=Comparison_of_smartphones&diff=943525120&oldid=943523606')
     soup = bs.BeautifulSoup(resp.text, 'lxml')
     product_list = []
     phone_list = []
@@ -224,30 +225,15 @@ def check_shift_time():
         cursor.close()
 
 '''
-Draw a piechart depicting the percentage of the products owned by each brand
+Export the brand distribution data to CSV and draw a piechart depicting the percentage of the products owned by each brand
+SQL used, PNG image and the CSV file have been included
 '''
-def draw_brand_distribution():
+def export_brand_distribution_csv():
     try:
         cursor = connection.cursor()
-
         # need superuser access
         postgreSQL_copy_Query = "\copy (SELECT brand, COUNT(*) FROM Product GROUP BY brand) TO 'brand_distribution.csv' WITH CSV;"
-        # cursor.execute(postgreSQL_copy_Query)
-
-        postgreSQL_select_Query = "SELECT brand, COUNT(*) FROM Product GROUP BY brand;"
-        cursor.execute(postgreSQL_select_Query)
-
-        records = cursor.fetchall()
-
-        brands = [row[0] for row in records]
-        count = [row[1] for row in records]
-
-        # Pie chart, where the slices will be ordered and plotted counter-clockwise:
-        fig1, ax1 = plt.subplots()
-        ax1.pie(count, labels=brands, autopct='%1.1f%%', shadow=True, startangle=90)
-        ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
-
-        plt.show()
+        cursor.execute(postgreSQL_copy_Query)
 
     except (Exception, psycopg2.Error) as error:
             print("Error while fetching data from PostgreSQL: ", error)
@@ -255,38 +241,60 @@ def draw_brand_distribution():
     finally:
         cursor.close()
 
-def draw_overall_sales():
+'''
+Export the overall sales data to CSV and draw a barchart of sales for each month
+SQL used, PNG image and the CSV file have been included
+'''
+def export_overall_sales_csv():
     try:
         cursor = connection.cursor()
-
         # need superuser access
-        postgreSQL_copy_Query = "\copy (SELECT brand, COUNT(*) FROM Product GROUP BY brand) TO 'brand_distribution.csv' WITH CSV;"
-        # cursor.execute(postgreSQL_copy_Query)
-
-        cursor.execute('''  SELECT EXTRACT(month from time) as Month, COALESCE(SUM(unit_price), 0) as Sales
-                            FROM Basket b LEFT OUTER JOIN Product p
-                            ON b.order_num = p.order_num
-                            GROUP BY Month
-                            ORDER BY Month;''')
-
-        records = cursor.fetchall()
-
-        months = [datetime(2020, i+1, 1).strftime('%b') for i in range(12)]
-        sales = [records[i][1] for i in range(12)]
-
-        y_pos = np.arange(len(months))
-
-        plt.bar(y_pos, sales, align='center', alpha=0.5)
-        plt.xticks(y_pos, months)
-        plt.ylabel('Sales (in $)')
-        plt.title('Overall Sales per Month')
-        plt.show()
+        postgreSQL_copy_Query = "\copy (SELECT EXTRACT(month from time) as Month, COALESCE(SUM(unit_price), 0) as Sales FROM Basket b LEFT OUTER JOIN Product p ON b.order_num = p.order_num GROUP BY Month ORDER BY Month) TO 'overall_sales.csv' WITH CSV;"
+        cursor.execute(postgreSQL_copy_Query)
 
     except (Exception, psycopg2.Error) as error:
         print("Error while fetching data from PostgreSQL: ", error)
 
     finally:
         cursor.close()
+
+'''
+Read the CSV data (change the location of the CSV file as per your device) of brand distribution data and plot using matplotlib
+'''
+def draw_brand_distribution():
+    brand=[]
+    product_count=[]
+    with open('/home/cs421g32/brand_distribution.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            brand.append(row[0])
+            product_count.append(row[1])
+
+    fig1, ax1 = plt.subplots()
+    ax1.pie(product_count, labels=brand, autopct='%1.1f%%', shadow=True, startangle=90)
+    ax1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+    plt.show()
+
+'''
+Read the CSV data (change the location of the CSV file as per your device) of overall sales and plot using matplotlib
+'''
+def draw_overall_sales():
+    y_pos=[]
+    sales=[]
+    with open('/home/cs421g32/overall_sales.csv') as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        for row in csv_reader:
+            y_pos.append(row[0])
+            sales.append(row[1])
+
+    months = [datetime(2020, i+1, 1).strftime('%b') for i in range(12)]
+    plt.bar(y_pos, sales, align='center', alpha=0.5)
+    plt.xticks(y_pos, months)
+    plt.ylabel('Sales (in $)')
+    plt.title('Overall Sales per Month')
+    plt.show()
+
 
 
 def run_app():
@@ -340,13 +348,18 @@ def main():
     # Scrape the web to populate the Phones relation
     populate_phones()
     # Visualize products by brand in a piechart
-    draw_brand_distribution()
+    export_brand_distribution_csv()
 
     # Question 4 (b)
     # Populate purchases to be able to visualize
     # (will give error if you run again since the records are already stored
     populate_purchases()
     # Visualize overall sales per month
+    export_overall_sales_csv()
+
+    # Question 5 (for creativity points)
+    #loading data using CSV into the program and visualizing it
+    draw_brand_distribution()
     draw_overall_sales()
 
 
