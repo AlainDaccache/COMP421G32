@@ -98,9 +98,9 @@ def populate_purchases():
 
 
 def populate_phones():
-    postgres_insert_query_product = """ INSERT INTO Product (barcode_no, brand, unit_price) 
+    postgres_insert_query_product = """ INSERT INTO Product (barcode_no, brand, unit_price)
                                         VALUES (%s,%s,%s)"""
-    postgres_insert_query_phone = """INSERT INTO Phone (barcode_no, cpu, battery, model, storage, ram)  
+    postgres_insert_query_phone = """INSERT INTO Phone (barcode_no, cpu, battery, model, storage, ram)
                                      VALUES (%s, %s, %s, %s, %s, %s)"""
 
     (product_list, phone_list) = scrape_phones()
@@ -124,7 +124,7 @@ def find_inactive(months):
         cursor = connection.cursor()
         postgres_fetch_query_inactive = """SELECT c.email FROM Customer c, Basket b
                                             WHERE b.email = c.email
-                                            AND (DATE_PART('year', NOW()) - DATE_PART('year', time) ) * 12 
+                                            AND (DATE_PART('year', NOW()) - DATE_PART('year', time) ) * 12
                                         + (DATE_PART('month', NOW()) - DATE_PART('month', time)) > %s """
         cursor.execute(postgres_fetch_query_inactive, months)
         customer_records = cursor.fetchall()
@@ -143,10 +143,10 @@ def find_inactive(months):
 
 def add_phone(brand, price, barcode, cpu, battery, model, storage, ram):
 
-    postgres_insert_query_phone = """INSERT INTO Phone (barcode_no, cpu, battery, model, storage, ram)  
+    postgres_insert_query_phone = """INSERT INTO Phone (barcode_no, cpu, battery, model, storage, ram)
                                      VALUES (%s, %s, %s, %s, %s, %s)"""
 
-    postgres_insert_query_product = """ INSERT INTO Product (barcode_no, brand, unit_price) 
+    postgres_insert_query_product = """ INSERT INTO Product (barcode_no, brand, unit_price)
                                         VALUES (%s, %s, %s)"""
 
     cursor = connection.cursor()
@@ -160,6 +160,39 @@ def add_phone(brand, price, barcode, cpu, battery, model, storage, ram):
         print(count, "Phone record successfully inserted into the database")
     except (Exception, psycopg2.Error) as error:
         print("Error while inserting Phone record into the database: ", error)
+
+    finally:
+        cursor.close()
+
+def cheapest_and_expensive_product(brand):
+
+    try:
+        cursor = connection.cursor()
+        postgres_fetch_query_prod = """SELECT * FROM product
+                                                WHERE brand = %s
+                                                AND ( unit_price <= ALL
+                                                (
+                                                  SELECT unit_price FROM product
+                                                  WHERE brand = %s
+                                                )
+                                                OR unit_price >= ALL
+                                                (
+                                                  SELECT unit_price FROM product
+                                                  WHERE brand = %s
+                                                ))
+                                                ORDER BY unit_price ASC; """
+        cursor.execute(postgres_fetch_query_prod, brand, brand, brand)
+        record = cursor.fetchall()
+        if (len(record) == 0):
+            print("No product from " + str(brand))
+        else:
+            print('Cheapest product from ' + str(brand) + ': ')
+            print(record[0])
+            print('Most expensive product from ' + str(brand) + ': ')
+            print(record[1])
+
+    except (Exception, psycopg2.Error) as error:
+        print("Error while fetching records from PostgreSQL: ", error)
 
     finally:
         cursor.close()
@@ -265,7 +298,7 @@ def run_app():
             findInactive t                                                          Look up emails of customers inactive for t months
             addPhone brand price barcode_no cpu battery model storage ram    Add a phone to the database
             Ketan
-            Aakarsh
+            describeBrandProducts brand                                            List cheapest and most expensive product from brand
             Shayan
             exit                                                                    Exit program
             """)
@@ -281,8 +314,8 @@ def run_app():
         elif ans[0] == "Ketan":
             print("Ketan's Part")
 
-        elif ans[0] == "Aakarsh":
-            print("Aakarsh's Part")
+        elif ans[0] == "describeBrandProducts":
+            cheapest_and_expensive_product(ans[1])
 
         elif ans[0] == "Shayan":
             print("Shayan's Part")
