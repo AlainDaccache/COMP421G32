@@ -133,7 +133,8 @@ The constraints that are not shown are
 -- \d Basket;
 -- \d Customer;
 
-
+CREATE INDEX unitPrice ON product(unit_price);
+CREATE INDEX shiftResponsibility ON shift(shift_responsibility);
 
 /* Part Three:
 Execute five INSERT commands to insert tuples into one of your relations.
