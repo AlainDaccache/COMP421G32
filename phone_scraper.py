@@ -190,14 +190,41 @@ def update_phone_price(brand, model, price):
             print(record)
 
     except (Exception, psycopg2.Error) as error:
-        print("Error while fetching records from PostgreSQL: ", error)
+        print("Error while updating prices of phones from PostgreSQL: ", error)
 
     finally:
         cursor.close()
 
+def delete_phone_by_barcode(barcode_num):
 
 
+    cursor = connection.cursor()
 
+    postgres_delete_phone = """ DELETE
+                                FROM phone
+                                WHERE phone.barcode_no= %s;"""
+    postgres_delete_product = """DELETE 
+                                FROM product
+                                WHERE product.barcode_no= %s;"""
+    postgres_show_phone = """SELECT *
+                             FROM phone, product
+                             WHERE phone.barcode_no=product.barcode_no;"""
+    try:
+        cursor.execute(postgres_delete_phone, (barcode_num,))
+        connection.commit()
+        cursor.execute(postgres_delete_product, (barcode_num,))
+        connection.commit()
+        cursor.execute(postgres_show_phone)
+        record = cursor.fetchall()
+
+        print("The remaining phones are: ")
+        print(record)
+
+    except (Exception, psycopg2.Error) as error:
+        print("Error while deleting phone: ", error)
+
+    finally:
+        cursor.close()
 
 def cheapest_and_expensive_product(brand):
 
@@ -216,7 +243,7 @@ def cheapest_and_expensive_product(brand):
                                                   WHERE brand = %s
                                                 ))
                                                 ORDER BY unit_price ASC; """
-        cursor.execute(postgres_fetch_query_prod, brand, brand, brand)
+        cursor.execute(postgres_fetch_query_prod, (brand, brand, brand))
         record = cursor.fetchall()
         if (len(record) == 0):
             print("No product from " + str(brand))
@@ -317,7 +344,7 @@ Read the CSV data (change the location of the CSV file as per your device) of ov
 def draw_overall_sales():
     y_pos=[]
     sales=[]
-    with open('/home/cs421g32/overall_sales.csv') as csv_file:
+    with open('overall_sales.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for row in csv_reader:
             y_pos.append(row[0])
@@ -339,7 +366,7 @@ def run_app():
             ---------------------------------------------------------------------------------------------------------------
             findInactive t                                                          Look up emails of customers inactive for t months
             addPhone brand price barcode_no cpu battery model storage ram    Add a phone to the database
-            Ketan
+            deletePhone barcode_no                                              Delete phone by barcode_no
             describeBrandProducts brand                                            List cheapest and most expensive product from brand
             updatePhonePrice brand model price                                     Update the price of all phones of given model and brand
             exit                                                                    Exit program
@@ -353,8 +380,8 @@ def run_app():
         elif ans[0] == "addPhone" and len(ans) == 9:
             add_phone(ans[1], ans[2], ans[3], ans[4], ans[5], ans[6], ans[7], ans[8])
 
-        elif ans[0] == "Ketan":
-            print("Ketan's Part")
+        elif ans[0] == "deletePhone" and len(ans) == 2:
+            delete_phone_by_barcode(ans[1])
 
         elif ans[0] == "describeBrandProducts" and len(ans)==2:
             cheapest_and_expensive_product(ans[1])
@@ -376,25 +403,25 @@ def main():
     check_shift_time()
 
     # Question 2:
-    run_app()
+    #run_app()
 
     # Question 4 (a)
     # Scrape the web to populate the Phones relation
     populate_phones()
     # Visualize products by brand in a piechart
-    #export_brand_distribution_csv()
+    export_brand_distribution_csv()
 
     # Question 4 (b)
     # Populate purchases to be able to visualize
     # (will give error if you run again since the records are already stored
-    #populate_purchases()
+    populate_purchases()
     # Visualize overall sales per month
-    #export_overall_sales_csv()
+    export_overall_sales_csv()
 
     # Question 5 (for creativity points)
     #loading data using CSV into the program and visualizing it
-    #draw_brand_distribution()
-    #draw_overall_sales()
+    draw_brand_distribution()
+    draw_overall_sales()
 
 
 main()
