@@ -124,7 +124,7 @@ def populate_phones():
 def find_inactive(months):
     try:
         cursor = connection.cursor()
-        postgres_fetch_query_inactive = """SELECT c.email FROM Customer c, Basket b
+        postgres_fetch_query_inactive = """SELECT DISTINCT c.email FROM Customer c, Basket b
                                             WHERE b.email = c.email
                                             AND (DATE_PART('year', NOW()) - DATE_PART('year', time) ) * 12
                                         + (DATE_PART('month', NOW()) - DATE_PART('month', time)) > %s """
@@ -365,10 +365,10 @@ def run_app():
                                     Command                                                     Description
             ---------------------------------------------------------------------------------------------------------------
             findInactive t                                                          Look up emails of customers inactive for t months
-            addPhone brand price barcode_no cpu battery model storage ram    Add a phone to the database
-            deletePhone barcode_no                                              Delete phone by barcode_no
-            describeBrandProducts brand                                            List cheapest and most expensive product from brand
-            updatePhonePrice brand model price                                     Update the price of all phones of given model and brand
+            addPhone brand price barcode_no cpu battery model storage ram           Add a phone to the database
+            deletePhone barcode_no                                                  Delete phone by barcode_no
+            describeBrandProducts brand                                             List cheapest and most expensive product from brand
+            updatePhonePrice brand model price                                      Update the price of all phones of given model and brand
             exit                                                                    Exit program
             """)
 
@@ -403,7 +403,7 @@ def main():
     check_shift_time()
 
     # Question 2:
-    #run_app()
+    run_app()
 
     # Question 4 (a)
     # Scrape the web to populate the Phones relation
