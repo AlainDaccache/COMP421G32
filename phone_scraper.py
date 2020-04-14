@@ -409,14 +409,14 @@ def main():
     # Scrape the web to populate the Phones relation
     populate_phones()
     # Visualize products by brand in a piechart
-    export_brand_distribution_csv()
+    #export_brand_distribution_csv()
 
     # Question 4 (b)
     # Populate purchases to be able to visualize
     # (will give error if you run again since the records are already stored
     populate_purchases()
     # Visualize overall sales per month
-    export_overall_sales_csv()
+    #export_overall_sales_csv()
 
     # Question 5 (for creativity points)
     #loading data using CSV into the program and visualizing it
