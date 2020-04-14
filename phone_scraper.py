@@ -1,3 +1,4 @@
+
 import numpy as np
 import psycopg2
 import random
@@ -5,7 +6,7 @@ import bs4 as bs
 import requests
 import re
 from datetime import timedelta, datetime
-from Tools.scripts.treesync import raw_input
+#from Tools.scripts.treesync import raw_input
 import matplotlib.pyplot as plt
 import csv
 
@@ -165,6 +166,39 @@ def add_phone(brand, price, barcode, cpu, battery, model, storage, ram):
     finally:
         cursor.close()
 
+def update_phone_price(brand, model, price):
+
+    try:
+        cursor = connection.cursor()
+        postgres_update_price_query = """ UPDATE Product
+                                          SET unit_price= %s WHERE Product IN (SELECT Product
+                                          FROM phone, product
+                                          WHERE phone.barcode_no= product.barcode_no AND product.brand = %s AND phone.model = %s);"""
+        postgres_show_price_query = """SELECT phone.barcode_no, product.brand, phone.model, product.unit_price
+                                       FROM phone, product
+                                       WHERE phone.barcode_no= product.barcode_no AND product.brand = %s AND phone.model = %s;"""
+        cursor.execute(postgres_update_price_query, (price, brand, model))
+        connection.commit()
+        cursor.execute(postgres_show_price_query, (brand,model))
+        connection.commit()
+        record = cursor.fetchall()
+
+        if (len(record) == 0):
+            print("No product from " + str(brand) + " of the model " + str(model))
+        else:
+            print("The updated prices of phones of " + str(brand) + " of the model " + str(model) + " are: ")
+            print(record)
+
+    except (Exception, psycopg2.Error) as error:
+        print("Error while fetching records from PostgreSQL: ", error)
+
+    finally:
+        cursor.close()
+
+
+
+
+
 def cheapest_and_expensive_product(brand):
 
     try:
@@ -264,7 +298,8 @@ Read the CSV data (change the location of the CSV file as per your device) of br
 def draw_brand_distribution():
     brand=[]
     product_count=[]
-    with open('/home/cs421g32/brand_distribution.csv') as csv_file:
+    #with open('/home/cs421g32/brand_distribution.csv') as csv_file:
+    with open('brand_distribution.csv') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for row in csv_reader:
             brand.append(row[0])
@@ -296,7 +331,6 @@ def draw_overall_sales():
     plt.show()
 
 
-
 def run_app():
     while True:
 
@@ -307,12 +341,12 @@ def run_app():
             addPhone brand price barcode_no cpu battery model storage ram    Add a phone to the database
             Ketan
             describeBrandProducts brand                                            List cheapest and most expensive product from brand
-            Shayan
+            updatePhonePrice brand model price                                     Update the price of all phones of given model and brand
             exit                                                                    Exit program
             """)
 
-        ans = raw_input("What would you like to do? ").split()
-
+        #ans = raw_input("What would you like to do? ").split()
+        ans = input("What would you like to do? ").split()
         if ans[0] == "findInactive" and len(ans) == 2:
             find_inactive(ans[1])
 
@@ -322,11 +356,11 @@ def run_app():
         elif ans[0] == "Ketan":
             print("Ketan's Part")
 
-        elif ans[0] == "describeBrandProducts":
+        elif ans[0] == "describeBrandProducts" and len(ans)==2:
             cheapest_and_expensive_product(ans[1])
 
-        elif ans[0] == "Shayan":
-            print("Shayan's Part")
+        elif ans[0] == "updatePhonePrice" and len(ans)==4:
+            update_phone_price(ans[1], ans[2], ans[3])
 
         elif ans[0] == "exit":
             connection.close()
@@ -342,25 +376,25 @@ def main():
     check_shift_time()
 
     # Question 2:
-    # run_app()
+    run_app()
 
     # Question 4 (a)
     # Scrape the web to populate the Phones relation
     populate_phones()
     # Visualize products by brand in a piechart
-    export_brand_distribution_csv()
+    #export_brand_distribution_csv()
 
     # Question 4 (b)
     # Populate purchases to be able to visualize
     # (will give error if you run again since the records are already stored
-    populate_purchases()
+    #populate_purchases()
     # Visualize overall sales per month
-    export_overall_sales_csv()
+    #export_overall_sales_csv()
 
     # Question 5 (for creativity points)
     #loading data using CSV into the program and visualizing it
-    draw_brand_distribution()
-    draw_overall_sales()
+    #draw_brand_distribution()
+    #draw_overall_sales()
 
 
 main()
